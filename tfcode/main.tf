@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-1"  # Choose your desired region
+  region = "us-east-1"  
 }
 
 
@@ -22,21 +22,8 @@ resource "aws_ecr_repository" "mg13rep" {
   name = "${var.prefix}-repository"
 }
 
-resource "aws_iam_role" "ec2_role" {
-  name               = "${var.prefix}-ec2-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action    = "sts:AssumeRole"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-        Effect    = "Allow"
-        Sid       = ""
-      },
-    ]
-  })
+data "aws_iam_instance_profile" "ec2_role" {
+  name= "LabInstanceProfile"
 }
 
 resource "aws_iam_policy" "ecr_policy" {
@@ -61,10 +48,10 @@ resource "aws_iam_policy" "ecr_policy" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attach_policy" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.ecr_policy.arn
-}
+# resource "aws_iam_role_policy_attachment" "attach_policy" {
+#   role       = data.aws_iam_instance_profile.ec2_role.name
+#   policy_arn = aws_iam_policy.ecr_policy.arn
+# }
 
 
 # Retrieve the default VPC
@@ -106,7 +93,7 @@ resource "aws_instance" "ec2" {
   ami           = data.aws_ami.latest_amazon_linux.id
   instance_type = "t2.micro"
   key_name      = aws_key_pair.my_key.key_name
-  iam_instance_profile = aws_iam_role.ec2_role.name
+  iam_instance_profile = data.aws_iam_instance_profile.ec2_role.name
   security_groups = [aws_security_group.ec2_sg.name]
 
   tags = {
@@ -118,9 +105,4 @@ resource "aws_instance" "ec2" {
 resource "aws_key_pair" "my_key" {
   key_name   = "mgibson13-asgn1"
   public_key = file ("mgibson13-asgn1.pub")
-}
-
-# ECR Repository
-resource "aws_ecr_repository" "mgibson13-asgn1" {
-  name = "${var.prefix}-repository"
 }

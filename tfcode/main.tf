@@ -18,41 +18,10 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+#Create ECR repository
 resource "aws_ecr_repository" "mg13rep" {
   name = "${var.prefix}-repository"
 }
-
-data "aws_iam_instance_profile" "ec2_role" {
-  name= "LabInstanceProfile"
-}
-
-resource "aws_iam_policy" "ecr_policy" {
-  name        = "${var.prefix}-ecr-policy"
-  description = "Allow EC2 to interact with ECR"
-  policy      = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action   = [
-          "ecr:GetAuthorizationToken",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetRepositoryPolicy",
-          "ecr:ListImages",
-          "ecr:BatchGetImage",
-          "ecr:PutImage"
-        ]
-        Resource = "${aws_ecr_repository.mg13rep.arn}"
-        Effect   = "Allow"
-      }
-    ]
-  })
-}
-
-# resource "aws_iam_role_policy_attachment" "attach_policy" {
-#   role       = data.aws_iam_instance_profile.ec2_role.name
-#   policy_arn = aws_iam_policy.ecr_policy.arn
-# }
-
 
 # Retrieve the default VPC
 data "aws_vpc" "default" {
@@ -93,8 +62,9 @@ resource "aws_instance" "ec2" {
   ami           = data.aws_ami.latest_amazon_linux.id
   instance_type = "t2.micro"
   key_name      = aws_key_pair.my_key.key_name
-  iam_instance_profile = data.aws_iam_instance_profile.ec2_role.name
+  iam_instance_profile = "LabInstanceProfile"
   security_groups = [aws_security_group.ec2_sg.name]
+  user_data = file("${path.module}/docker.sh")
 
   tags = {
     Name ="${var.prefix}-ec2-instance"

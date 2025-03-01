@@ -81,7 +81,7 @@ resource "aws_security_group" "ec2_sg" {
 # EC2 Instance in a Public Subnet
 resource "aws_instance" "ec2" {
   ami           = data.aws_ami.latest_amazon_linux.id
-  instance_type = "t2.micro"
+  instance_type = "t3.medium"
   key_name      = aws_key_pair.my_key.key_name
   iam_instance_profile = "LabInstanceProfile"
   security_groups = [aws_security_group.ec2_sg.name]
